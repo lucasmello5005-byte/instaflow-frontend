@@ -1,0 +1,1292 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>InstaFlow — SaaS Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ── Reset & Base ──────────────────────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#08090d;--surface:#0f1018;--s2:#171923;--s3:#1e2130;
+  --border:#252838;--border2:#2e3347;
+  --accent:#f97316;--accent2:#fb923c;--accent-glow:rgba(249,115,22,0.15);
+  --blue:#3b82f6;--green:#10b981;--red:#ef4444;--yellow:#f59e0b;
+  --purple:#8b5cf6;
+  --text:#f1f2f7;--muted:#6b7280;--muted2:#9ca3af;
+  --font:'Bricolage Grotesque',sans-serif;
+  --mono:'JetBrains Mono',monospace;
+}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+
+/* ── Scrollbar ─────────────────────────────────────────────────────────────── */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:var(--surface)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+
+/* ── Layout ────────────────────────────────────────────────────────────────── */
+.app{display:flex;min-height:100vh}
+.sidebar{width:220px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;height:100vh;z-index:50;transition:transform .3s}
+.main{margin-left:220px;flex:1;display:flex;flex-direction:column;min-height:100vh}
+.content{padding:32px;flex:1}
+
+/* ── Sidebar ───────────────────────────────────────────────────────────────── */
+.logo-area{padding:24px 20px;border-bottom:1px solid var(--border)}
+.logo{font-size:20px;font-weight:800;letter-spacing:-0.5px}
+.logo span{color:var(--accent)}
+.logo-tag{font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-top:2px}
+
+.nav{padding:16px 10px;flex:1;overflow-y:auto}
+.nav-label{font-size:10px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;padding:12px 10px 6px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;cursor:pointer;font-size:13.5px;color:var(--muted2);margin-bottom:1px;transition:all .15s;border:1px solid transparent;text-decoration:none}
+.nav-item:hover{background:var(--s2);color:var(--text)}
+.nav-item.active{background:linear-gradient(135deg,rgba(249,115,22,.12),rgba(249,115,22,.06));color:var(--accent);border-color:rgba(249,115,22,.2)}
+.nav-icon{width:16px;text-align:center;flex-shrink:0;font-size:15px}
+.nav-badge{margin-left:auto;background:var(--accent);color:white;font-size:10px;padding:2px 7px;border-radius:20px;font-weight:600}
+
+.sidebar-bottom{padding:12px;border-top:1px solid var(--border)}
+.plan-badge{background:linear-gradient(135deg,var(--s3),var(--s2));border:1px solid var(--border2);border-radius:10px;padding:12px;cursor:pointer;transition:border-color .2s}
+.plan-badge:hover{border-color:var(--accent)}
+.plan-name{font-size:12px;font-weight:700;color:var(--accent)}
+.plan-desc{font-size:11px;color:var(--muted);margin-top:2px}
+
+/* ── Topbar ────────────────────────────────────────────────────────────────── */
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 32px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:40}
+.topbar-left h1{font-size:17px;font-weight:700;letter-spacing:-0.3px}
+.topbar-left p{font-size:12px;color:var(--muted);margin-top:1px}
+.topbar-right{display:flex;gap:10px;align-items:center}
+
+/* ── Buttons ───────────────────────────────────────────────────────────────── */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:8px 18px;border-radius:8px;border:none;cursor:pointer;font-family:var(--font);font-size:13px;font-weight:600;transition:all .2s;text-decoration:none;white-space:nowrap}
+.btn-primary{background:var(--accent);color:white}
+.btn-primary:hover{background:var(--accent2);transform:translateY(-1px);box-shadow:0 6px 20px rgba(249,115,22,.35)}
+.btn-ghost{background:var(--s2);color:var(--text);border:1px solid var(--border2)}
+.btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
+.btn-danger{background:rgba(239,68,68,.1);color:var(--red);border:1px solid rgba(239,68,68,.2)}
+.btn-danger:hover{background:rgba(239,68,68,.2)}
+.btn-sm{padding:6px 12px;font-size:12px}
+.btn-icon{padding:8px;border-radius:8px}
+
+/* ── Cards ─────────────────────────────────────────────────────────────────── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.card-header{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.card-title{font-size:14px;font-weight:700}
+.card-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.card-body{padding:22px}
+
+/* ── Stat cards ────────────────────────────────────────────────────────────── */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px;position:relative;overflow:hidden;transition:transform .2s,border-color .2s;cursor:default}
+.stat-card:hover{transform:translateY(-2px);border-color:var(--border2)}
+.stat-card::after{content:'';position:absolute;top:-30px;right:-30px;width:80px;height:80px;border-radius:50%;opacity:.08}
+.stat-card:nth-child(1)::after{background:var(--accent)}
+.stat-card:nth-child(2)::after{background:var(--green)}
+.stat-card:nth-child(3)::after{background:var(--blue)}
+.stat-card:nth-child(4)::after{background:var(--purple)}
+.stat-icon{font-size:20px;margin-bottom:14px}
+.stat-value{font-size:26px;font-weight:800;letter-spacing:-1px}
+.stat-label{font-size:11px;color:var(--muted);margin-top:3px;text-transform:uppercase;letter-spacing:.5px}
+.stat-delta{font-size:11px;margin-top:8px;font-weight:600}
+.delta-up{color:var(--green)}
+.delta-down{color:var(--red)}
+
+/* ── Grid layouts ──────────────────────────────────────────────────────────── */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.grid-main{display:grid;grid-template-columns:1fr 320px;gap:20px}
+
+/* ── Forms ─────────────────────────────────────────────────────────────────── */
+.form-group{margin-bottom:16px}
+.label{display:block;font-size:11px;color:var(--muted2);letter-spacing:.5px;text-transform:uppercase;margin-bottom:7px;font-weight:600}
+.input{width:100%;background:var(--s2);border:1px solid var(--border2);border-radius:9px;padding:10px 14px;color:var(--text);font-family:var(--font);font-size:13.5px;outline:none;transition:border-color .2s}
+.input:focus{border-color:var(--accent)}
+.input::placeholder{color:var(--muted)}
+textarea.input{resize:vertical;min-height:80px;line-height:1.6}
+select.input option{background:var(--s2)}
+
+/* ── Upload zone ───────────────────────────────────────────────────────────── */
+.upload-zone{border:2px dashed var(--border2);border-radius:12px;padding:28px;text-align:center;cursor:pointer;transition:all .2s;background:var(--s2)}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--accent);background:rgba(249,115,22,.05)}
+.upload-icon{font-size:28px;margin-bottom:8px}
+.upload-text{font-size:13px;color:var(--muted2)}
+.upload-hint{font-size:11px;color:var(--muted);margin-top:4px}
+
+/* ── Tags ──────────────────────────────────────────────────────────────────── */
+.tags-wrap{display:flex;flex-wrap:wrap;gap:6px;padding:8px;background:var(--s2);border:1px solid var(--border2);border-radius:9px;min-height:42px;cursor:text}
+.tag{background:rgba(249,115,22,.12);border:1px solid rgba(249,115,22,.25);color:var(--accent);border-radius:6px;padding:3px 9px;font-size:12px;display:flex;align-items:center;gap:5px}
+.tag-x{cursor:pointer;opacity:.6;transition:opacity .2s}
+.tag-x:hover{opacity:1}
+.tag-input{background:none;border:none;outline:none;color:var(--text);font-family:var(--font);font-size:13px;flex:1;min-width:80px}
+
+/* ── Post queue ────────────────────────────────────────────────────────────── */
+.post-item{display:flex;align-items:center;gap:14px;padding:13px 0;border-bottom:1px solid var(--border)}
+.post-item:last-child{border-bottom:none}
+.post-thumb{width:46px;height:46px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px;overflow:hidden}
+.post-thumb img{width:100%;height:100%;object-fit:cover;border-radius:9px}
+.post-info{flex:1;min-width:0}
+.post-caption{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.post-meta{font-size:11px;color:var(--muted);margin-top:3px;display:flex;gap:10px}
+.post-actions{display:flex;gap:6px;flex-shrink:0}
+
+/* ── Status badges ─────────────────────────────────────────────────────────── */
+.badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;flex-shrink:0}
+.badge-scheduled{background:rgba(59,130,246,.12);color:var(--blue);border:1px solid rgba(59,130,246,.2)}
+.badge-published{background:rgba(16,185,129,.12);color:var(--green);border:1px solid rgba(16,185,129,.2)}
+.badge-failed{background:rgba(239,68,68,.12);color:var(--red);border:1px solid rgba(239,68,68,.2)}
+.badge-publishing{background:rgba(245,158,11,.12);color:var(--yellow);border:1px solid rgba(245,158,11,.2)}
+.badge-pro{background:linear-gradient(135deg,rgba(139,92,246,.15),rgba(249,115,22,.15));color:#c084fc;border:1px solid rgba(139,92,246,.2)}
+
+/* ── Account card ──────────────────────────────────────────────────────────── */
+.account-card{background:var(--s2);border:1px solid var(--border);border-radius:12px;padding:16px;display:flex;align-items:center;gap:14px;transition:border-color .2s}
+.account-card:hover{border-color:var(--border2)}
+.account-avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--purple));display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;overflow:hidden}
+.account-avatar img{width:100%;height:100%;object-fit:cover}
+.account-info{flex:1;min-width:0}
+.account-name{font-size:13.5px;font-weight:700}
+.account-stats{font-size:11px;color:var(--muted);margin-top:2px}
+.account-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.dot-active{background:var(--green);box-shadow:0 0 6px var(--green)}
+.dot-warning{background:var(--yellow);box-shadow:0 0 6px var(--yellow)}
+
+/* ── Product card ──────────────────────────────────────────────────────────── */
+.product-card{background:var(--s2);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:transform .2s,border-color .2s;cursor:pointer}
+.product-card:hover{transform:translateY(-2px);border-color:var(--border2)}
+.product-img{width:100%;aspect-ratio:1;background:linear-gradient(135deg,var(--s3),var(--border));display:flex;align-items:center;justify-content:center;font-size:36px;overflow:hidden}
+.product-img img{width:100%;height:100%;object-fit:cover}
+.product-info{padding:12px}
+.product-name{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.product-price{font-size:16px;font-weight:800;color:var(--accent);margin-top:4px}
+.product-category{font-size:11px;color:var(--muted);margin-top:2px}
+
+/* ── Analytics ─────────────────────────────────────────────────────────────── */
+.metric-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)}
+.metric-row:last-child{border-bottom:none}
+.metric-label{font-size:13px;color:var(--muted2)}
+.metric-value{font-size:15px;font-weight:700}
+.prog-bar{height:4px;background:var(--border);border-radius:4px;overflow:hidden;margin-top:6px}
+.prog-fill{height:100%;border-radius:4px;transition:width 1s ease}
+
+/* ── Pricing ───────────────────────────────────────────────────────────────── */
+.pricing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;max-width:860px;margin:0 auto}
+.pricing-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px;text-align:center;transition:transform .2s,border-color .2s;position:relative;overflow:hidden}
+.pricing-card.featured{border-color:var(--accent);background:linear-gradient(135deg,rgba(249,115,22,.06),var(--surface))}
+.pricing-card.featured::before{content:'MAIS POPULAR';position:absolute;top:14px;right:-28px;background:var(--accent);color:white;font-size:9px;font-weight:800;padding:4px 36px;transform:rotate(45deg);letter-spacing:1px}
+.pricing-card:hover{transform:translateY(-4px)}
+.price-name{font-size:13px;font-weight:700;color:var(--muted2);letter-spacing:1px;text-transform:uppercase}
+.price-amount{font-size:40px;font-weight:800;letter-spacing:-2px;margin:12px 0 4px}
+.price-amount span{font-size:16px;font-weight:400;color:var(--muted)}
+.price-period{font-size:12px;color:var(--muted);margin-bottom:20px}
+.price-features{list-style:none;text-align:left;margin-bottom:24px}
+.price-features li{font-size:13px;color:var(--muted2);padding:6px 0;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.price-features li::before{content:'✓';color:var(--green);font-weight:700;flex-shrink:0}
+
+/* ── Modal ─────────────────────────────────────────────────────────────────── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:18px;width:100%;max-width:540px;max-height:90vh;overflow-y:auto;animation:modalIn .25s ease-out}
+.modal-lg{max-width:760px}
+@keyframes modalIn{from{opacity:0;transform:scale(.96) translateY(8px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.modal-header{padding:22px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--surface);z-index:1}
+.modal-title{font-size:16px;font-weight:700}
+.modal-close{background:var(--s2);border:1px solid var(--border);color:var(--muted2);width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.modal-close:hover{color:var(--text);border-color:var(--border2)}
+.modal-body{padding:24px}
+
+/* ── Toast ─────────────────────────────────────────────────────────────────── */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--s3);border:1px solid var(--border2);border-radius:12px;padding:13px 18px;font-size:13px;z-index:999;display:flex;align-items:center;gap:10px;max-width:340px;transform:translateY(80px);opacity:0;transition:all .3s}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.success{border-color:rgba(16,185,129,.3)}
+.toast.error{border-color:rgba(239,68,68,.3)}
+
+/* ── Auth pages ────────────────────────────────────────────────────────────── */
+.auth-page{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:var(--bg)}
+.auth-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:40px;width:100%;max-width:420px}
+.auth-logo{font-size:26px;font-weight:800;text-align:center;margin-bottom:8px}
+.auth-logo span{color:var(--accent)}
+.auth-sub{text-align:center;color:var(--muted);font-size:14px;margin-bottom:32px}
+.auth-divider{text-align:center;color:var(--muted);font-size:12px;margin:16px 0;position:relative}
+.auth-divider::before{content:'';position:absolute;top:50%;left:0;right:0;height:1px;background:var(--border)}
+.auth-divider span{background:var(--surface);padding:0 12px;position:relative}
+.auth-link{color:var(--accent);cursor:pointer;text-decoration:none}
+.auth-link:hover{text-decoration:underline}
+
+/* ── Preview phone ─────────────────────────────────────────────────────────── */
+.ig-preview{border:2px solid var(--border2);border-radius:16px;overflow:hidden;background:var(--s2);max-width:280px}
+.ig-prev-header{padding:10px 12px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border)}
+.ig-prev-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--purple))}
+.ig-prev-name{font-size:12px;font-weight:600}
+.ig-prev-img{width:100%;aspect-ratio:1;background:linear-gradient(135deg,var(--s3),var(--border));display:flex;align-items:center;justify-content:center;font-size:48px}
+.ig-prev-img img{width:100%;height:100%;object-fit:cover}
+.ig-prev-footer{padding:12px}
+.ig-prev-actions{font-size:18px;display:flex;gap:12px;margin-bottom:8px}
+.ig-prev-caption{font-size:11px;color:var(--muted2);line-height:1.5}
+
+/* ── Misc ──────────────────────────────────────────────────────────────────── */
+.divider{height:1px;background:var(--border);margin:20px 0}
+.empty{text-align:center;padding:48px;color:var(--muted)}
+.empty-icon{font-size:40px;margin-bottom:12px}
+.empty-text{font-size:14px;font-weight:600;margin-bottom:6px}
+.empty-sub{font-size:12px}
+.loader{width:20px;height:20px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.flex{display:flex}.flex-c{display:flex;align-items:center}.gap-2{gap:8px}.gap-3{gap:12px}.gap-4{gap:16px}
+.mt-4{margin-top:16px}.mt-6{margin-top:24px}.mb-4{margin-bottom:16px}.mb-6{margin-bottom:24px}
+.w-full{width:100%}.text-sm{font-size:13px}.text-xs{font-size:11px}.text-muted{color:var(--muted)}.fw-700{font-weight:700}
+.overflow-scroll{overflow-y:auto;max-height:420px}
+.section-title{font-size:18px;font-weight:800;letter-spacing:-.5px;margin-bottom:4px}
+.section-sub{font-size:13px;color:var(--muted);margin-bottom:24px}
+
+/* ── AI chip ───────────────────────────────────────────────────────────────── */
+.ai-chip{display:inline-flex;align-items:center;gap:5px;background:linear-gradient(135deg,rgba(139,92,246,.15),rgba(249,115,22,.1));border:1px solid rgba(139,92,246,.25);border-radius:20px;padding:3px 10px;font-size:11px;color:#c084fc;font-weight:600;letter-spacing:.3px}
+.ai-chip::before{content:'✦'}
+
+/* Responsive */
+@media(max-width:1100px){.stats-grid{grid-template-columns:repeat(2,1fr)}.grid-main{grid-template-columns:1fr}}
+@media(max-width:768px){.sidebar{transform:translateX(-100%)}.main{margin-left:0}.content{padding:16px}.stats-grid{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+
+<div id="root"></div>
+
+<script type="module">
+// ============================================================
+//  InstaFlow — Full SaaS Frontend (Vanilla JS / No build needed)
+//  Production: replace with React + react-router-dom
+// ============================================================
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let state = {
+  page: 'dashboard',
+  user: { name: 'João Silva', email: 'joao@email.com', plan: 'pro' },
+  accounts: [
+    { id:'a1', username:'joaosilva.shop', type:'business', followers:12400, active:true, tokenDays:45 },
+    { id:'a2', username:'joao.creator',   type:'creator',  followers:5820,  active:true, tokenDays:8  },
+  ],
+  posts: [
+    { id:'p1', accountId:'a1', caption:'🚀 Produto novo chegou! Confira nossa linha exclusiva de verão...', thumb:'🛍️', type:'feed',  status:'scheduled', scheduledAt:'2026-03-12T09:00', hashtags:['#moda','#verão'], recurrence:'once' },
+    { id:'p2', accountId:'a1', caption:'Promoção especial só hoje! 50% OFF em toda a coleção ✨', thumb:'🎉', type:'reel',  status:'scheduled', scheduledAt:'2026-03-12T18:00', hashtags:['#promoção','#oferta'], recurrence:'daily' },
+    { id:'p3', accountId:'a2', caption:'Por trás das câmeras... ❤️ obrigado pelo apoio de vocês!', thumb:'🎬', type:'story', status:'published', scheduledAt:'2026-03-11T15:00', hashtags:['#bts'], recurrence:'once' },
+    { id:'p4', accountId:'a1', caption:'Novo carrossel com dicas de estilo para o inverno 🧥', thumb:'📸', type:'feed',  status:'published', scheduledAt:'2026-03-11T12:00', hashtags:['#style'], recurrence:'weekly' },
+    { id:'p5', accountId:'a2', caption:'Live especial amanhã às 20h! Vem que vai ter surpresa 🔴', thumb:'🔴', type:'feed',  status:'failed',    scheduledAt:'2026-03-10T20:00', hashtags:['#live'], recurrence:'once' },
+  ],
+  products: [
+    { id:'pr1', name:'Camiseta Premium V2', price:89.90,  category:'Roupas',     emoji:'👕', description:'Algodão 100% nacional, corte slim fit' },
+    { id:'pr2', name:'Calça Jogger',        price:149.90, category:'Roupas',     emoji:'👖', description:'Tecido elástico confortável' },
+    { id:'pr3', name:'Consultoria 1h',      price:250.00, category:'Serviços',   emoji:'💡', description:'Consultoria de marketing digital' },
+    { id:'pr4', name:'Ebook Marketing',     price:37.00,  category:'Digital',    emoji:'📘', description:'Guia completo de crescimento no Instagram' },
+    { id:'pr5', name:'Tênis Urban',         price:299.90, category:'Calçados',   emoji:'👟', description:'Edição limitada, disponível até esgotar' },
+  ],
+  analytics: {
+    impressions: 48200, reach: 31500, likes: 3840, comments: 412,
+    followers: 18220, websiteClicks: 294, saves: 671,
+    chart: [
+      {d:'06/Mar',imp:5800,likes:380},{d:'07/Mar',imp:7200,likes:510},{d:'08/Mar',imp:6100,likes:420},
+      {d:'09/Mar',imp:8400,likes:690},{d:'10/Mar',imp:7600,likes:580},{d:'11/Mar',imp:9100,likes:720},{d:'12/Mar',imp:4000,likes:540},
+    ]
+  },
+  modal: null,
+  toast: null,
+};
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const fmt = n => n >= 1000 ? (n/1000).toFixed(1)+'K' : n;
+const fmtBRL = n => `R$ ${n.toFixed(2).replace('.',',')}`;
+const fmtDate = s => new Date(s).toLocaleString('pt-BR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+
+function render() {
+  $('root').innerHTML = buildApp();
+  attachEvents();
+  drawChart();
+}
+
+function buildApp() {
+  if (state.page === 'login')    return buildLogin();
+  if (state.page === 'register') return buildRegister();
+  return `
+    <div class="app">
+      ${buildSidebar()}
+      <div class="main">
+        ${buildTopbar()}
+        <div class="content">
+          ${buildPage()}
+        </div>
+      </div>
+    </div>
+    ${state.modal ? buildModal() : ''}
+    <div class="toast ${state.toast ? 'show ' + state.toast.type : ''}" id="toast">
+      ${state.toast ? state.toast.msg : ''}
+    </div>
+  `;
+}
+
+// ── Sidebar ──────────────────────────────────────────────────────────────────
+function buildSidebar() {
+  const nav = [
+    { id:'dashboard', icon:'📊', label:'Dashboard' },
+    { id:'posts',     icon:'📅', label:'Posts', badge: state.posts.filter(p=>p.status==='scheduled').length },
+    { id:'accounts',  icon:'📱', label:'Contas IG' },
+    { id:'products',  icon:'🛍️', label:'Catálogo' },
+    { id:'analytics', icon:'📈', label:'Analytics' },
+    { id:'ai',        icon:'🤖', label:'IA & Legendas' },
+    { id:'billing',   icon:'💳', label:'Planos' },
+  ];
+  return `
+  <aside class="sidebar">
+    <div class="logo-area">
+      <div class="logo">Insta<span>Flow</span></div>
+      <div class="logo-tag">SaaS Dashboard</div>
+    </div>
+    <nav class="nav">
+      <div class="nav-label">Principal</div>
+      ${nav.slice(0,5).map(n=>`
+        <a class="nav-item ${state.page===n.id?'active':''}" onclick="nav('${n.id}')">
+          <span class="nav-icon">${n.icon}</span>
+          <span>${n.label}</span>
+          ${n.badge ? `<span class="nav-badge">${n.badge}</span>` : ''}
+        </a>`).join('')}
+      <div class="nav-label" style="margin-top:8px">Ferramentas</div>
+      ${nav.slice(5).map(n=>`
+        <a class="nav-item ${state.page===n.id?'active':''}" onclick="nav('${n.id}')">
+          <span class="nav-icon">${n.icon}</span>
+          <span>${n.label}</span>
+        </a>`).join('')}
+    </nav>
+    <div class="sidebar-bottom">
+      <div class="plan-badge" onclick="nav('billing')">
+        <div class="plan-name">✦ Plano Pro</div>
+        <div class="plan-desc">5 contas · Posts ilimitados</div>
+      </div>
+    </div>
+  </aside>`;
+}
+
+// ── Topbar ───────────────────────────────────────────────────────────────────
+const pageInfo = {
+  dashboard:{ title:'Dashboard', sub:'Visão geral do seu negócio' },
+  posts:    { title:'Posts Agendados', sub:'Gerencie sua fila de publicações' },
+  accounts: { title:'Contas Instagram', sub:'Multi-tenant · gerencie múltiplas contas' },
+  products: { title:'Catálogo de Produtos', sub:'Vincule produtos aos seus posts' },
+  analytics:{ title:'Analytics', sub:'Relatórios de engajamento e performance' },
+  ai:       { title:'IA & Legendas', sub:'Gere legendas e hashtags com inteligência artificial' },
+  billing:  { title:'Planos & Cobrança', sub:'Gerencie sua assinatura' },
+};
+
+function buildTopbar() {
+  const p = pageInfo[state.page] || { title: state.page, sub:'' };
+  return `
+  <div class="topbar">
+    <div class="topbar-left">
+      <h1>${p.title}</h1>
+      <p>${p.sub}</p>
+    </div>
+    <div class="topbar-right">
+      <button class="btn btn-ghost btn-sm" onclick="nav('accounts')">📱 ${state.accounts.length} contas</button>
+      <button class="btn btn-primary" onclick="openNewPost()">✚ Novo Post</button>
+      <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--purple));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;cursor:pointer;" title="${state.user.name}">
+        ${state.user.name.charAt(0)}
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── Pages ─────────────────────────────────────────────────────────────────────
+function buildPage() {
+  switch(state.page) {
+    case 'dashboard': return buildDashboard();
+    case 'posts':     return buildPosts();
+    case 'accounts':  return buildAccounts();
+    case 'products':  return buildProducts();
+    case 'analytics': return buildAnalytics();
+    case 'ai':        return buildAI();
+    case 'billing':   return buildBilling();
+    default:          return buildDashboard();
+  }
+}
+
+// ── DASHBOARD ─────────────────────────────────────────────────────────────────
+function buildDashboard() {
+  const a = state.analytics;
+  const scheduled = state.posts.filter(p=>p.status==='scheduled');
+  const published = state.posts.filter(p=>p.status==='published');
+  return `
+  <div class="stats-grid">
+    ${[
+      {icon:'📸', value: fmt(published.length + 142), label:'Posts Publicados', delta:'↑ 12 este mês', up:true},
+      {icon:'❤️', value: fmt(a.likes), label:'Curtidas Totais', delta:'↑ 18% vs mês ant.', up:true},
+      {icon:'👁️', value: fmt(a.reach), label:'Alcance Total', delta:'↑ 22% vs mês ant.', up:true},
+      {icon:'👥', value: fmt(a.followers), label:'Seguidores Totais', delta:'↑ +340 este mês', up:true},
+    ].map(s=>`
+      <div class="stat-card">
+        <div class="stat-icon">${s.icon}</div>
+        <div class="stat-value">${s.value}</div>
+        <div class="stat-label">${s.label}</div>
+        <div class="stat-delta ${s.up?'delta-up':'delta-down'}">${s.delta}</div>
+      </div>`).join('')}
+  </div>
+
+  <div class="grid-main" style="gap:20px">
+    <div>
+      <div class="card" style="margin-bottom:20px">
+        <div class="card-header">
+          <div><div class="card-title">📈 Impressões & Curtidas (7 dias)</div></div>
+        </div>
+        <div class="card-body" style="padding:16px 22px 22px">
+          <canvas id="main-chart" height="180"></canvas>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div><div class="card-title">📋 Próximos Posts</div><div class="card-sub">${scheduled.length} agendados</div></div>
+          <button class="btn btn-ghost btn-sm" onclick="nav('posts')">Ver todos →</button>
+        </div>
+        <div class="card-body">
+          ${scheduled.slice(0,4).map(p=>postRow(p)).join('') || empty('Nenhum post agendado','Clique em Novo Post para começar')}
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:20px">
+      <div class="card">
+        <div class="card-header"><div class="card-title">📱 Contas Ativas</div><button class="btn btn-ghost btn-sm" onclick="nav('accounts')">Gerenciar</button></div>
+        <div class="card-body">
+          ${state.accounts.map(a=>`
+            <div class="account-card" style="margin-bottom:10px">
+              <div class="account-avatar">@</div>
+              <div class="account-info">
+                <div class="account-name">@${a.username}</div>
+                <div class="account-stats">${fmt(a.followers)} seguidores · ${a.type}</div>
+              </div>
+              <div class="account-dot ${a.tokenDays > 14 ? 'dot-active' : 'dot-warning'}" title="Token expira em ${a.tokenDays} dias"></div>
+            </div>`).join('')}
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><div class="card-title">⚡ Resumo Rápido</div></div>
+        <div class="card-body">
+          ${[
+            ['Posts hoje',       '3',   'var(--accent)'],
+            ['Taxa de sucesso',  '96%', 'var(--green)'],
+            ['Eng. médio',       '4.2%','var(--blue)'],
+            ['Cliques no link',  fmt(a.websiteClicks), 'var(--purple)'],
+          ].map(([l,v,c])=>`
+            <div class="metric-row">
+              <span class="metric-label">${l}</span>
+              <span class="metric-value" style="color:${c}">${v}</span>
+            </div>`).join('')}
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── POSTS ─────────────────────────────────────────────────────────────────────
+function buildPosts() {
+  const tabs = ['Todos','scheduled','published','failed'];
+  const cur = state.postFilter || 'Todos';
+  const filtered = cur === 'Todos' ? state.posts : state.posts.filter(p=>p.status===cur);
+  return `
+  <div style="display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap">
+    ${tabs.map(t=>`<button class="btn ${(cur===t)?'btn-primary':'btn-ghost'} btn-sm" onclick="setFilter('${t}')">${
+      t==='Todos'?'Todos':t==='scheduled'?'Agendados':t==='published'?'Publicados':'Com Falha'
+    }</button>`).join('')}
+    <button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="openNewPost()">✚ Novo Post</button>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      ${filtered.length ? filtered.map(p=>`
+        <div class="post-item">
+          <div class="post-thumb" style="background:linear-gradient(135deg,var(--s3),var(--border))">${p.thumb}</div>
+          <div class="post-info">
+            <div class="post-caption">${p.caption}</div>
+            <div class="post-meta">
+              <span>📱 @${(state.accounts.find(a=>a.id===p.accountId)||{}).username||'?'}</span>
+              <span>🕐 ${fmtDate(p.scheduledAt)}</span>
+              <span>${{feed:'📷 Feed',reel:'🎬 Reel',story:'📱 Story'}[p.type]}</span>
+              ${p.recurrence!=='once'?`<span>🔁 ${{daily:'Diário',weekly:'Semanal',weekdays:'Dias úteis'}[p.recurrence]}</span>`:''}
+            </div>
+          </div>
+          <span class="badge badge-${p.status}">${{scheduled:'📅 Agendado',published:'✅ Publicado',failed:'❌ Falhou',publishing:'⏳ Publicando'}[p.status]}</span>
+          <div class="post-actions">
+            ${p.status==='scheduled'?`<button class="btn btn-ghost btn-sm" onclick="publishNow('${p.id}')">▶ Agora</button>`:''}
+            <button class="btn btn-danger btn-sm" onclick="deletePost('${p.id}')">🗑</button>
+          </div>
+        </div>`).join('') : empty('Nenhum post','Crie seu primeiro post agendado!')}
+    </div>
+  </div>`;
+}
+
+// ── ACCOUNTS ─────────────────────────────────────────────────────────────────
+function buildAccounts() {
+  const planLimits = { free:1, starter:2, pro:5, agency:20 };
+  const limit = planLimits[state.user.plan] || 1;
+  return `
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px">
+    <div>
+      <div class="section-title">Contas Instagram</div>
+      <div class="section-sub">${state.accounts.length}/${limit} contas no plano <strong>${state.user.plan}</strong></div>
+    </div>
+    <button class="btn btn-primary" onclick="openConnectAccount()">＋ Conectar Conta</button>
+  </div>
+
+  <div class="grid-2" style="margin-bottom:24px">
+    ${state.accounts.map(a=>`
+      <div class="card">
+        <div class="card-body">
+          <div class="flex-c gap-3" style="margin-bottom:16px">
+            <div class="account-avatar" style="width:52px;height:52px;font-size:20px">@</div>
+            <div>
+              <div style="font-size:15px;font-weight:700">@${a.username}</div>
+              <div style="font-size:12px;color:var(--muted)">${a.type} · ${fmt(a.followers)} seguidores</div>
+            </div>
+            <div class="account-dot ${a.tokenDays > 14 ? 'dot-active' : 'dot-warning'}" style="margin-left:auto"></div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px">
+            ${[
+              ['Posts', state.posts.filter(p=>p.accountId===a.id).length],
+              ['Agendados', state.posts.filter(p=>p.accountId===a.id&&p.status==='scheduled').length],
+              ['Token', a.tokenDays+'d'],
+            ].map(([l,v])=>`<div style="background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center">
+              <div style="font-size:16px;font-weight:700">${v}</div>
+              <div style="font-size:10px;color:var(--muted);margin-top:2px">${l}</div>
+            </div>`).join('')}
+          </div>
+
+          ${a.tokenDays < 14 ? `<div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:8px;padding:10px;font-size:12px;color:var(--yellow);margin-bottom:12px">
+            ⚠️ Token expira em ${a.tokenDays} dias. <a href="#" style="color:var(--accent)">Renovar agora →</a>
+          </div>` : ''}
+
+          <div class="flex gap-2">
+            <button class="btn btn-ghost btn-sm flex-1">📊 Analytics</button>
+            <button class="btn btn-danger btn-sm" onclick="removeAccount('${a.id}')">Desconectar</button>
+          </div>
+        </div>
+      </div>`).join('')}
+
+    ${state.accounts.length < limit ? `
+      <div class="card" style="border-style:dashed;cursor:pointer;display:flex;align-items:center;justify-content:center;min-height:200px" onclick="openConnectAccount()">
+        <div style="text-align:center;color:var(--muted)">
+          <div style="font-size:36px;margin-bottom:8px">＋</div>
+          <div style="font-size:13px;font-weight:600">Conectar nova conta</div>
+          <div style="font-size:12px;margin-top:4px">${limit - state.accounts.length} slot(s) disponível</div>
+        </div>
+      </div>` : ''}
+  </div>`;
+}
+
+// ── PRODUCTS ─────────────────────────────────────────────────────────────────
+function buildProducts() {
+  return `
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px">
+    <div>
+      <div class="section-title">Catálogo de Produtos</div>
+      <div class="section-sub">Vincule produtos aos posts para rastrear conversões</div>
+    </div>
+    <button class="btn btn-primary" onclick="openAddProduct()">＋ Novo Produto</button>
+  </div>
+
+  <div class="grid-3">
+    ${state.products.map(p=>`
+      <div class="product-card" onclick="openEditProduct('${p.id}')">
+        <div class="product-img">${p.emoji}</div>
+        <div class="product-info">
+          <div class="product-name">${p.name}</div>
+          <div class="product-price">${fmtBRL(p.price)}</div>
+          <div class="product-category">${p.category}</div>
+          <div class="flex gap-2 mt-4">
+            <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();linkProductToPost('${p.id}')">📅 Agendar post</button>
+            <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteProduct('${p.id}')">🗑</button>
+          </div>
+        </div>
+      </div>`).join('')}
+
+    <div class="product-card" style="border-style:dashed;display:flex;align-items:center;justify-content:center;min-height:220px;cursor:pointer" onclick="openAddProduct()">
+      <div style="text-align:center;color:var(--muted)">
+        <div style="font-size:32px;margin-bottom:6px">＋</div>
+        <div style="font-size:12px">Adicionar produto</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── ANALYTICS ────────────────────────────────────────────────────────────────
+function buildAnalytics() {
+  const a = state.analytics;
+  const metrics = [
+    {label:'Impressões',   value:fmt(a.impressions), icon:'👁️', color:'var(--blue)',   pct:100},
+    {label:'Alcance',      value:fmt(a.reach),       icon:'📡', color:'var(--purple)', pct:65},
+    {label:'Curtidas',     value:fmt(a.likes),       icon:'❤️', color:'var(--red)',    pct:42},
+    {label:'Comentários',  value:fmt(a.comments),    icon:'💬', color:'var(--green)',  pct:28},
+    {label:'Salvamentos',  value:fmt(a.saves),       icon:'🔖', color:'var(--yellow)', pct:18},
+    {label:'Cliques link', value:a.websiteClicks,    icon:'🔗', color:'var(--accent)', pct:14},
+  ];
+  return `
+  <div class="stats-grid" style="grid-template-columns:repeat(3,1fr)">
+    ${metrics.map(m=>`
+      <div class="stat-card">
+        <div class="stat-icon">${m.icon}</div>
+        <div class="stat-value" style="color:${m.color}">${m.value}</div>
+        <div class="stat-label">${m.label}</div>
+        <div class="prog-bar" style="margin-top:10px"><div class="prog-fill" style="width:${m.pct}%;background:${m.color}"></div></div>
+      </div>`).join('')}
+  </div>
+
+  <div class="grid-main">
+    <div>
+      <div class="card">
+        <div class="card-header">
+          <div><div class="card-title">📈 Performance — 7 dias</div></div>
+          <div class="flex gap-2">
+            <button class="btn btn-ghost btn-sm">7 dias</button>
+            <button class="btn btn-ghost btn-sm">30 dias</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <canvas id="main-chart" height="200"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">🏆 Top Posts</div></div>
+        <div class="card-body">
+          ${state.posts.filter(p=>p.status==='published').map(p=>`
+            <div class="post-item">
+              <div class="post-thumb">${p.thumb}</div>
+              <div class="post-info">
+                <div class="post-caption">${p.caption.substring(0,50)}...</div>
+                <div class="post-meta"><span>❤️ ${Math.floor(Math.random()*800+100)}</span><span>💬 ${Math.floor(Math.random()*50+5)}</span></div>
+              </div>
+            </div>`).join('')}
+        </div>
+      </div>
+
+      <div class="card mt-4">
+        <div class="card-header"><div class="card-title">⏰ Melhores Horários</div></div>
+        <div class="card-body">
+          ${[
+            {day:'Quarta',time:'18:30',score:98},
+            {day:'Sexta', time:'20:00',score:95},
+            {day:'Segunda',time:'19:00',score:91},
+          ].map(t=>`
+            <div style="margin-bottom:14px">
+              <div class="flex-c" style="justify-content:space-between;margin-bottom:5px;font-size:12px">
+                <span>${t.day}</span><span style="color:var(--accent)">${t.time} · ${t.score}%</span>
+              </div>
+              <div class="prog-bar"><div class="prog-fill" style="width:${t.score}%;background:linear-gradient(90deg,var(--accent2),var(--accent))"></div></div>
+            </div>`).join('')}
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── AI PAGE ──────────────────────────────────────────────────────────────────
+function buildAI() {
+  return `
+  <div class="grid-main">
+    <div>
+      <div class="card" style="margin-bottom:20px">
+        <div class="card-header">
+          <div>
+            <div class="card-title">✦ Gerador de Legendas com IA</div>
+            <div class="card-sub">Claude AI · GPT-4 level quality</div>
+          </div>
+          <span class="ai-chip">AI Powered</span>
+        </div>
+        <div class="card-body">
+          <div class="form-group">
+            <label class="label">Produto ou Serviço</label>
+            <input class="input" id="ai-product" placeholder="Ex: Camiseta Premium de Algodão">
+          </div>
+          <div class="form-group">
+            <label class="label">Descrição</label>
+            <textarea class="input" id="ai-desc" rows="2" placeholder="Ex: Algodão 100%, corte slim, disponível nas cores preta e branca"></textarea>
+          </div>
+          <div class="grid-2">
+            <div class="form-group">
+              <label class="label">Preço</label>
+              <input class="input" id="ai-price" placeholder="Ex: 89,90" type="number">
+            </div>
+            <div class="form-group">
+              <label class="label">Tom</label>
+              <select class="input" id="ai-tone">
+                <option value="casual">💬 Casual e descontraído</option>
+                <option value="professional">💼 Profissional</option>
+                <option value="urgency">🔥 Urgência / Oferta</option>
+                <option value="funny">😂 Divertido</option>
+                <option value="inspirational">✨ Inspiracional</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn btn-primary w-full" onclick="generateCaption()" id="gen-btn" style="justify-content:center;padding:12px">
+            ✦ Gerar Legenda com IA
+          </button>
+
+          <div id="ai-result" style="display:none;margin-top:20px">
+            <div class="divider"></div>
+            <label class="label">Legenda Gerada</label>
+            <textarea class="input" id="ai-caption-output" rows="5"></textarea>
+            <div style="margin-top:12px">
+              <label class="label">Hashtags Sugeridas</label>
+              <div class="tags-wrap" id="ai-hashtag-result"></div>
+            </div>
+            <div class="flex gap-2 mt-4">
+              <button class="btn btn-primary" onclick="useGeneratedCaption()" style="flex:1;justify-content:center">📅 Usar neste post</button>
+              <button class="btn btn-ghost" onclick="generateCaption()">🔄 Regerar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><div class="card-title">💡 Dicas de IA para Instagram</div></div>
+        <div class="card-body">
+          ${[
+            ['🕐','Poste entre 18h–20h','Horário de maior engajamento para a maioria dos nichos no Brasil'],
+            ['#️⃣','Use 20–25 hashtags','Mix de populares + nicho = maior alcance orgânico'],
+            ['🎬','Reels têm 3x mais alcance','Priorize Reels sobre posts estáticos para crescimento'],
+            ['🔁','Consistência > quantidade','3 posts/semana consistentes > 7 posts em 1 semana'],
+          ].map(([i,t,d])=>`
+            <div class="metric-row">
+              <div><div style="font-size:13px;font-weight:600">${i} ${t}</div><div class="text-xs text-muted mt-1">${d}</div></div>
+            </div>`).join('')}
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">👁️ Preview do Post</div></div>
+        <div class="card-body">
+          <div class="ig-preview">
+            <div class="ig-prev-header">
+              <div class="ig-prev-avatar"></div>
+              <div><div class="ig-prev-name">seu_perfil</div><div style="font-size:10px;color:var(--muted)">Agora</div></div>
+            </div>
+            <div class="ig-prev-img" id="ig-prev-img">🖼️</div>
+            <div class="ig-prev-footer">
+              <div class="ig-prev-actions">🤍 💬 📤</div>
+              <div class="ig-prev-caption" id="ig-prev-cap">Sua legenda aparecerá aqui após gerar...</div>
+            </div>
+          </div>
+
+          <div style="margin-top:16px;background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:14px">
+            <div style="font-size:12px;color:var(--muted);margin-bottom:8px">✦ Automação com IA ativa</div>
+            ${[
+              ['Otimização de horário','ON'],
+              ['Hashtags automáticas','ON'],
+              ['Geração de legendas','ON'],
+            ].map(([l,v])=>`
+              <div class="metric-row" style="padding:6px 0">
+                <span class="text-sm">${l}</span>
+                <span style="color:var(--green);font-size:11px;font-weight:700">${v}</span>
+              </div>`).join('')}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── BILLING ──────────────────────────────────────────────────────────────────
+function buildBilling() {
+  const plans = [
+    { id:'starter', name:'Starter', price:'R$47', period:'/mês', color:'var(--blue)',
+      features:['2 contas Instagram','60 posts/mês','Geração de legendas IA','Relatórios básicos','Suporte por email'] },
+    { id:'pro', name:'Pro', price:'R$97', period:'/mês', color:'var(--accent)', featured:true,
+      features:['5 contas Instagram','Posts ilimitados','IA ilimitada + hashtags','Analytics avançado','Catálogo de produtos','Suporte prioritário'] },
+    { id:'agency', name:'Agency', price:'R$197', period:'/mês', color:'var(--purple)',
+      features:['20 contas Instagram','Posts ilimitados','Tudo do Pro','White-label','API access','Gerente de conta dedicado'] },
+  ];
+  return `
+  <div style="text-align:center;margin-bottom:40px">
+    <div class="section-title">Escolha seu Plano</div>
+    <div class="section-sub">Sem fidelidade. Cancele quando quiser.</div>
+  </div>
+
+  <div class="pricing-grid">
+    ${plans.map(p=>`
+      <div class="pricing-card ${p.featured?'featured':''}">
+        <div class="price-name" style="color:${p.color}">${p.name}</div>
+        <div class="price-amount" style="color:${p.color}">${p.price}<span>${p.period}</span></div>
+        <div class="price-period">cobrado mensalmente</div>
+        <ul class="price-features">
+          ${p.features.map(f=>`<li>${f}</li>`).join('')}
+        </ul>
+        <button class="btn ${p.featured?'btn-primary':'btn-ghost'} w-full" style="justify-content:center;padding:12px"
+          onclick="subscribe('${p.id}')">
+          ${state.user.plan === p.id ? '✓ Plano Atual' : `Assinar ${p.name}`}
+        </button>
+      </div>`).join('')}
+  </div>
+
+  <div class="card mt-6">
+    <div class="card-header"><div class="card-title">💳 Assinatura Atual</div></div>
+    <div class="card-body">
+      <div class="flex-c gap-3">
+        <div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,rgba(249,115,22,.2),rgba(249,115,22,.1));display:flex;align-items:center;justify-content:center;font-size:22px">✦</div>
+        <div>
+          <div style="font-weight:700;font-size:15px">Plano Pro — R$97/mês</div>
+          <div style="font-size:12px;color:var(--muted)">Próxima cobrança: 12 de Abril de 2026</div>
+        </div>
+        <button class="btn btn-ghost btn-sm" style="margin-left:auto">Gerenciar</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── Login / Register ──────────────────────────────────────────────────────────
+function buildLogin() {
+  return `<div class="auth-page"><div class="auth-card">
+    <div class="auth-logo">Insta<span>Flow</span></div>
+    <div class="auth-sub">Faça login na sua conta</div>
+    <div class="form-group"><label class="label">Email</label><input class="input" id="l-email" type="email" placeholder="voce@email.com"></div>
+    <div class="form-group"><label class="label">Senha</label><input class="input" id="l-pass" type="password" placeholder="••••••••"></div>
+    <button class="btn btn-primary w-full" style="justify-content:center;padding:12px;margin-top:8px" onclick="doLogin()">Entrar</button>
+    <div class="auth-divider" style="margin-top:20px"><span>ou</span></div>
+    <p style="text-align:center;font-size:13px;color:var(--muted);margin-top:16px">
+      Não tem conta? <a class="auth-link" onclick="nav('register')">Criar conta grátis</a>
+    </p>
+  </div></div>`;
+}
+
+function buildRegister() {
+  return `<div class="auth-page"><div class="auth-card">
+    <div class="auth-logo">Insta<span>Flow</span></div>
+    <div class="auth-sub">Crie sua conta grátis</div>
+    <div class="form-group"><label class="label">Nome</label><input class="input" id="r-name" placeholder="Seu nome completo"></div>
+    <div class="form-group"><label class="label">Email</label><input class="input" id="r-email" type="email" placeholder="voce@email.com"></div>
+    <div class="form-group"><label class="label">Senha</label><input class="input" id="r-pass" type="password" placeholder="Mínimo 6 caracteres"></div>
+    <button class="btn btn-primary w-full" style="justify-content:center;padding:12px;margin-top:8px" onclick="doRegister()">Criar conta</button>
+    <p style="text-align:center;font-size:13px;color:var(--muted);margin-top:16px">
+      Já tem conta? <a class="auth-link" onclick="nav('login')">Entrar</a>
+    </p>
+  </div></div>`;
+}
+
+// ── Modal builder ─────────────────────────────────────────────────────────────
+function buildModal() {
+  const m = state.modal;
+  let body = '';
+
+  if (m.type === 'new-post') body = buildNewPostModal();
+  if (m.type === 'connect-account') body = buildConnectAccountModal();
+  if (m.type === 'add-product') body = buildAddProductModal();
+
+  return `<div class="overlay" onclick="closeModalOnBg(event)"><div class="modal ${m.lg?'modal-lg':''}">
+    <div class="modal-header">
+      <div class="modal-title">${m.title}</div>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body">${body}</div>
+  </div></div>`;
+}
+
+function buildNewPostModal() {
+  const accounts = state.accounts;
+  const products = state.products;
+  return `
+  <div class="grid-2">
+    <div>
+      <div class="form-group">
+        <label class="label">Conta Instagram</label>
+        <select class="input" id="m-account">
+          ${accounts.map(a=>`<option value="${a.id}">@${a.username}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="label">Legenda</label>
+        <div class="flex gap-2" style="margin-bottom:8px">
+          <button class="btn btn-ghost btn-sm ai-chip" onclick="quickAI()">✦ Gerar com IA</button>
+        </div>
+        <textarea class="input" id="m-caption" rows="4" placeholder="Escreva sua legenda..."></textarea>
+      </div>
+      <div class="form-group">
+        <label class="label">Hashtags</label>
+        <div class="tags-wrap" id="m-tags">
+          <input class="tag-input" id="m-tag-input" placeholder="Digite e pressione Enter..." onkeydown="addTag(event,'m-tags','m-tag-input')">
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="label">Data</label>
+          <input class="input" id="m-date" type="date" value="${new Date().toISOString().split('T')[0]}">
+        </div>
+        <div class="form-group">
+          <label class="label">Horário</label>
+          <input class="input" id="m-time" type="time" value="18:00">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="label">Tipo</label>
+        <select class="input" id="m-type">
+          <option value="feed">📷 Feed</option>
+          <option value="reel">🎬 Reel</option>
+          <option value="story">📱 Story</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="label">Recorrência</label>
+        <select class="input" id="m-recur">
+          <option value="once">Uma vez</option>
+          <option value="daily">Diariamente</option>
+          <option value="weekly">Semanalmente</option>
+          <option value="weekdays">Dias úteis</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="label">Produto vinculado (opcional)</label>
+        <select class="input" id="m-product">
+          <option value="">— Nenhum —</option>
+          ${products.map(p=>`<option value="${p.id}">${p.name} · ${fmtBRL(p.price)}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+
+    <div>
+      <label class="label">Mídia</label>
+      <div class="upload-zone" onclick="$('m-file').click()" id="m-upload">
+        <div class="upload-icon">🖼️</div>
+        <div class="upload-text">Clique ou arraste</div>
+        <div class="upload-hint">JPG, PNG, MP4 · máx 100MB</div>
+        <input type="file" id="m-file" style="display:none" accept="image/*,video/*" onchange="handleFilePreview(event)">
+      </div>
+      <div style="margin-top:16px">
+        <div class="ig-preview">
+          <div class="ig-prev-header"><div class="ig-prev-avatar"></div><div><div class="ig-prev-name">@preview</div></div></div>
+          <div class="ig-prev-img" id="m-prev-img">🖼️</div>
+          <div class="ig-prev-footer"><div class="ig-prev-actions">🤍 💬 📤</div><div class="ig-prev-caption" id="m-prev-cap">Legenda aparecerá aqui...</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+  <div class="flex gap-2" style="justify-content:flex-end">
+    <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+    <button class="btn btn-primary" onclick="savePost()">📅 Agendar Post</button>
+  </div>`;
+}
+
+function buildConnectAccountModal() {
+  return `
+  <div class="form-group"><label class="label">Instagram Business Account ID</label><input class="input" id="ca-id" placeholder="Ex: 17841400008460056"></div>
+  <div class="form-group"><label class="label">Access Token</label><input class="input" id="ca-token" type="password" placeholder="EAABsbCS..."></div>
+  <div class="form-group"><label class="label">Username (para referência)</label><input class="input" id="ca-user" placeholder="@seu_usuario"></div>
+  <div style="background:rgba(249,115,22,.08);border:1px solid rgba(249,115,22,.2);border-radius:10px;padding:14px;font-size:12px;color:var(--muted2);margin-bottom:20px;line-height:1.7">
+    💡 Para obter seu Business ID e Access Token, acesse <strong>developers.facebook.com/tools/explorer</strong>. Consulte o guia incluso para passo a passo completo.
+  </div>
+  <div class="flex gap-2" style="justify-content:flex-end">
+    <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+    <button class="btn btn-primary" onclick="saveAccount()">Conectar Conta</button>
+  </div>`;
+}
+
+function buildAddProductModal() {
+  return `
+  <div class="form-group"><label class="label">Nome do Produto/Serviço</label><input class="input" id="p-name" placeholder="Ex: Camiseta Premium"></div>
+  <div class="form-group"><label class="label">Descrição</label><textarea class="input" id="p-desc" rows="2" placeholder="Breve descrição do produto..."></textarea></div>
+  <div class="grid-2">
+    <div class="form-group"><label class="label">Preço (R$)</label><input class="input" id="p-price" type="number" step="0.01" placeholder="0,00"></div>
+    <div class="form-group"><label class="label">Categoria</label>
+      <select class="input" id="p-cat">
+        <option>Roupas</option><option>Calçados</option><option>Acessórios</option>
+        <option>Serviços</option><option>Digital</option><option>Outros</option>
+      </select>
+    </div>
+  </div>
+  <div class="form-group"><label class="label">URL da Imagem (opcional)</label><input class="input" id="p-img" placeholder="https://..."></div>
+  <div class="form-group"><label class="label">Link do Produto (bio/loja)</label><input class="input" id="p-link" placeholder="https://sualoja.com/produto"></div>
+  <div class="flex gap-2" style="justify-content:flex-end;margin-top:8px">
+    <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+    <button class="btn btn-primary" onclick="saveProduct()">Salvar Produto</button>
+  </div>`;
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+function postRow(p) {
+  const acc = state.accounts.find(a=>a.id===p.accountId) || {};
+  return `
+  <div class="post-item">
+    <div class="post-thumb" style="background:linear-gradient(135deg,var(--s3),var(--border))">${p.thumb}</div>
+    <div class="post-info">
+      <div class="post-caption">${p.caption.substring(0,60)}...</div>
+      <div class="post-meta"><span>📱 @${acc.username||'?'}</span><span>🕐 ${fmtDate(p.scheduledAt)}</span></div>
+    </div>
+    <span class="badge badge-${p.status}">${{scheduled:'📅',published:'✅',failed:'❌',publishing:'⏳'}[p.status]}</span>
+  </div>`;
+}
+
+function empty(title, sub) {
+  return `<div class="empty"><div class="empty-icon">📭</div><div class="empty-text">${title}</div><div class="empty-sub text-muted">${sub}</div></div>`;
+}
+
+// ── Chart ────────────────────────────────────────────────────────────────────
+function drawChart() {
+  const canvas = document.getElementById('main-chart');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const data = state.analytics.chart;
+  const W = canvas.offsetWidth || 600;
+  const H = canvas.height;
+  canvas.width = W;
+
+  const pad = { t:10, r:20, b:30, l:40 };
+  const cW = W - pad.l - pad.r;
+  const cH = H - pad.t - pad.b;
+  const maxImp = Math.max(...data.map(d=>d.imp)) * 1.15;
+
+  ctx.clearRect(0,0,W,H);
+
+  // Grid
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+  ctx.lineWidth = 1;
+  for(let i=0;i<=4;i++) {
+    const y = pad.t + (cH/4)*i;
+    ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(W-pad.r,y);ctx.stroke();
+  }
+
+  const sx = (i) => pad.l + (cW/(data.length-1))*i;
+  const sy = (v) => pad.t + cH - (v/maxImp)*cH;
+
+  // Impressions gradient fill
+  const grad = ctx.createLinearGradient(0,pad.t,0,H-pad.b);
+  grad.addColorStop(0,'rgba(249,115,22,0.25)');
+  grad.addColorStop(1,'rgba(249,115,22,0)');
+  ctx.beginPath();
+  ctx.moveTo(sx(0), sy(data[0].imp));
+  data.forEach((d,i)=>{ if(i>0) ctx.lineTo(sx(i),sy(d.imp)); });
+  ctx.lineTo(sx(data.length-1), H-pad.b);
+  ctx.lineTo(sx(0), H-pad.b);
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Impressions line
+  ctx.beginPath();
+  ctx.strokeStyle = 'var(--accent)'; ctx.lineWidth = 2;
+  data.forEach((d,i) => { i===0?ctx.moveTo(sx(i),sy(d.imp)):ctx.lineTo(sx(i),sy(d.imp)); });
+  ctx.stroke();
+
+  // Dots + labels
+  data.forEach((d,i) => {
+    ctx.beginPath();ctx.arc(sx(i),sy(d.imp),4,0,Math.PI*2);
+    ctx.fillStyle='var(--accent)';ctx.fill();
+    ctx.strokeStyle=getComputedStyle(document.documentElement).getPropertyValue('--bg');
+    ctx.lineWidth=2;ctx.stroke();
+    ctx.fillStyle='rgba(255,255,255,0.4)';ctx.font='10px Bricolage Grotesque,sans-serif';
+    ctx.textAlign='center';ctx.fillText(d.d,sx(i),H-8);
+  });
+}
+
+// ── Actions ──────────────────────────────────────────────────────────────────
+window.nav = (p) => { state.page=p; render(); };
+window.setFilter = (f) => { state.postFilter=f; render(); };
+window.openNewPost = () => { state.modal={type:'new-post',title:'✚ Novo Post Agendado',lg:true}; render(); };
+window.openConnectAccount = () => { state.modal={type:'connect-account',title:'📱 Conectar Conta Instagram'}; render(); };
+window.openAddProduct = () => { state.modal={type:'add-product',title:'🛍️ Novo Produto'}; render(); };
+window.closeModal = () => { state.modal=null; render(); };
+window.closeModalOnBg = (e) => { if(e.target.classList.contains('overlay')) closeModal(); };
+
+window.savePost = () => {
+  const cap = $('m-caption')?.value;
+  if (!cap) { showToast('Preencha a legenda!','error'); return; }
+  const accountId = $('m-account')?.value;
+  const date = $('m-date')?.value;
+  const time = $('m-time')?.value;
+  const emojis = ['🛍️','🎬','📸','✨','🔥','💡','🎉','🌅'];
+  state.posts.unshift({
+    id: 'p'+Date.now(), accountId,
+    caption: cap, thumb: emojis[Math.floor(Math.random()*emojis.length)],
+    type: $('m-type')?.value||'feed',
+    status: 'scheduled',
+    scheduledAt: date+'T'+time,
+    hashtags: [],
+    recurrence: $('m-recur')?.value||'once',
+  });
+  state.modal=null;
+  showToast('✅ Post agendado com sucesso!','success');
+  render();
+};
+
+window.saveAccount = () => {
+  const id = $('ca-id')?.value;
+  const token = $('ca-token')?.value;
+  const user = $('ca-user')?.value;
+  if (!id||!token||!user) { showToast('Preencha todos os campos!','error'); return; }
+  state.accounts.push({ id:'a'+Date.now(), username:user.replace('@',''), type:'creator', followers:0, active:true, tokenDays:60 });
+  state.modal=null;
+  showToast('✅ Conta conectada!','success');
+  render();
+};
+
+window.saveProduct = () => {
+  const name = $('p-name')?.value;
+  if (!name) { showToast('Nome é obrigatório!','error'); return; }
+  const emojis = ['🛍️','👕','👖','👟','💡','📘'];
+  state.products.push({ id:'pr'+Date.now(), name, description:$('p-desc')?.value||'', price:parseFloat($('p-price')?.value)||0, category:$('p-cat')?.value||'Outros', emoji:emojis[Math.floor(Math.random()*emojis.length)] });
+  state.modal=null;
+  showToast('✅ Produto adicionado!','success');
+  render();
+};
+
+window.deletePost = (id) => {
+  state.posts = state.posts.filter(p=>p.id!==id);
+  showToast('🗑️ Post removido','success');
+  render();
+};
+
+window.deleteProduct = (id) => {
+  state.products = state.products.filter(p=>p.id!==id);
+  showToast('🗑️ Produto removido','success');
+  render();
+};
+
+window.removeAccount = (id) => {
+  state.accounts = state.accounts.filter(a=>a.id!==id);
+  showToast('Conta desconectada','success');
+  render();
+};
+
+window.publishNow = (id) => {
+  const p = state.posts.find(p=>p.id===id);
+  if (p) { p.status='published'; p.publishedAt=new Date().toISOString(); }
+  showToast('✅ Post publicado agora!','success');
+  render();
+};
+
+window.subscribe = (plan) => {
+  if (state.user.plan===plan) return;
+  // In production: redirect to Stripe checkout
+  showToast(`💳 Redirecionando para checkout do plano ${plan}...`,'success');
+};
+
+window.linkProductToPost = (id) => {
+  state.modal={type:'new-post',title:'✚ Novo Post com Produto',lg:true};
+  render();
+};
+
+window.openEditProduct = () => {};
+
+window.addTag = (e, containerId, inputId) => {
+  if (e.key !== 'Enter') return;
+  const input = $(inputId);
+  let val = input.value.trim();
+  if (!val) return;
+  if (!val.startsWith('#')) val = '#'+val;
+  const tag = document.createElement('span');
+  tag.className='tag';
+  tag.innerHTML=`${val} <span class="tag-x" onclick="this.parentElement.remove()">×</span>`;
+  $(containerId).insertBefore(tag, input);
+  input.value='';
+};
+
+window.handleFilePreview = (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const prev = $('m-prev-img');
+    if (prev && file.type.startsWith('image')) prev.innerHTML=`<img src="${ev.target.result}">`;
+    $('m-upload').querySelector('.upload-icon').textContent='✅';
+    $('m-upload').querySelector('.upload-text').textContent=file.name;
+  };
+  reader.readAsDataURL(file);
+};
+
+window.quickAI = () => {
+  const captions = [
+    '🔥 Você merece o melhor! Nossa nova coleção chegou com tudo. Qualidade que fala por si mesma. Link na bio para garantir o seu! ✨',
+    '✨ Quando estilo encontra conforto, nasce algo especial. Disponível agora! Corre que é por tempo limitado 👇',
+    '💎 Exclusividade que você sente. Cada detalhe pensado pra você brilhar em qualquer ocasião. Acesse o link na bio!',
+  ];
+  const cap = $('m-caption');
+  if (cap) cap.value = captions[Math.floor(Math.random()*captions.length)];
+  const prev = $('m-prev-cap');
+  if (prev) prev.textContent = cap.value;
+  showToast('✦ Legenda gerada com IA!','success');
+};
+
+window.generateCaption = () => {
+  const btn = $('gen-btn');
+  if (btn) { btn.textContent='⏳ Gerando...'; btn.disabled=true; }
+
+  setTimeout(() => {
+    const product = $('ai-product')?.value || 'produto';
+    const tone = $('ai-tone')?.value;
+    const captions = {
+      casual:       `Ei! Já conhece o nosso ${product}? 😍 A gente se apaixonou e você vai se apaixonar também! Qualidade incrível, preço justo. Vem conferir — link na bio! 🛒`,
+      professional: `Apresentamos o ${product} — desenvolvido com excelência para quem busca qualidade superior. Uma solução completa para suas necessidades. Acesse nossa loja via link na bio.`,
+      urgency:      `🚨 ÚLTIMAS UNIDADES do ${product}! Não perca essa oportunidade incrível. Quem chegar primeiro, leva! ⏰ Corre pro link da bio antes de acabar!`,
+      funny:        `Ok, confessamos: ficamos viciados no ${product} 😂 Testamos, aprovamos e agora não conseguimos parar de recomendar. Vai lá conferir, você vai entender! 👀`,
+      inspirational:`✨ Cada detalhe do ${product} foi pensado pra elevar sua experiência. Porque você merece o melhor. Dê esse presente a você mesmo. Link na bio 💫`,
+    };
+    const cap = captions[tone] || captions.casual;
+    if ($('ai-caption-output')) $('ai-caption-output').value = cap;
+    if ($('ig-prev-cap')) $('ig-prev-cap').textContent = cap;
+
+    const tags = ['#produtos','#moda','#qualidade','#compras','#oferta','#novidade','#style','#shop','#brasil','#tendência','#lifestyle','#ootd'];
+    const selected = tags.sort(()=>Math.random()-.5).slice(0,8);
+    const container = $('ai-hashtag-result');
+    if (container) container.innerHTML = selected.map(t=>`<span class="tag">${t} <span class="tag-x">×</span></span>`).join('');
+
+    if ($('ai-result')) $('ai-result').style.display='block';
+    if (btn) { btn.textContent='✦ Gerar Legenda com IA'; btn.disabled=false; }
+    showToast('✦ Legenda e hashtags geradas!','success');
+  }, 1500);
+};
+
+window.useGeneratedCaption = () => {
+  state.modal = {type:'new-post',title:'✚ Novo Post Agendado',lg:true};
+  render();
+  setTimeout(() => {
+    const cap = $('ai-caption-output')?.value;
+    if (cap && $('m-caption')) $('m-caption').value = cap;
+  }, 100);
+};
+
+window.doLogin = () => {
+  const e = $('l-email')?.value; const p = $('l-pass')?.value;
+  if (!e||!p) { showToast('Preencha email e senha','error'); return; }
+  state.user = { name:'João Silva', email:e, plan:'pro' };
+  state.page = 'dashboard';
+  render();
+};
+
+window.doRegister = () => {
+  const n=$('r-name')?.value,e=$('r-email')?.value,p=$('r-pass')?.value;
+  if(!n||!e||!p){showToast('Preencha todos os campos','error');return;}
+  state.user={name:n,email:e,plan:'free'};
+  state.page='dashboard';
+  render();
+};
+
+function showToast(msg, type='success') {
+  state.toast = {msg, type};
+  render();
+  setTimeout(() => { state.toast=null; render(); }, 3500);
+}
+
+function attachEvents() {
+  const capInput = document.getElementById('m-caption');
+  if (capInput) {
+    capInput.addEventListener('input', () => {
+      const prev = $('m-prev-cap');
+      if (prev) prev.textContent = capInput.value || 'Legenda aparecerá aqui...';
+    });
+  }
+}
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+render();
+window.addEventListener('resize', drawChart);
+</script>
+</body>
+</html>
